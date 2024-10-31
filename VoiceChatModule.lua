@@ -1,17 +1,62 @@
 -- Author: U_M9 (TearikiAriki)
--- Date: 31/10/2024
+-- Date: 31/10/2024 Recent Update (1/11/2024)
 
 local VoiceChatModule = {}
 local VoiceChatService = game:GetService("VoiceChatService")
 local Players = game:GetService("Players")
 
+VoiceChatModule.Channels = {}
+
 function VoiceChatModule:InitVoiceChat(player)
     if VoiceChatService:IsVoiceChatEnabledForUserIdAsync(player.UserId) then
         print("Voice Chat enabled for:", player.Name)
-        VoiceChatService:JoinByGroupId(player.UserId, "DefaultChannel")
+        self:connectVoiceChannel(player, "DefaultChannel")
         self:ApplyDefaultVoiceEffects(player)
     else
         print("Voice Chat not enabled for:", player.Name)
+    end
+end
+
+function VoiceChatModule:createVoiceChannel(channelName)
+    if self.Channels[channelName] then
+        print("Channel already exists:", channelName)
+        return channelName
+    else
+        self.Channels[channelName] = true
+        print("Voice channel created:", channelName)
+        return channelName
+    end
+end
+
+function VoiceChatModule:removeVoiceChannel(channelName)
+    if self.Channels[channelName] then
+        for _, player in pairs(Players:GetPlayers()) do
+            if player.UserId and VoiceChatService:IsPlayerInChannel(player.UserId, channelName) then
+                self:leaveVoiceChannel(player, channelName)
+            end
+        end
+        self.Channels[channelName] = nil
+        print("Voice channel removed:", channelName)
+    else
+        warn("Channel does not exist:", channelName)
+    end
+end
+
+function VoiceChatModule:connectVoiceChannel(player, channelName)
+    if self.Channels[channelName] then
+        VoiceChatService:JoinByGroupId(player.UserId, channelName)
+        print(player.Name, "connected to channel:", channelName)
+    else
+        warn("Channel does not exist:", channelName)
+    end
+end
+
+function VoiceChatModule:leaveVoiceChannel(player, channelName)
+    if self.Channels[channelName] then
+        VoiceChatService:LeaveChannel(player.UserId)
+        print(player.Name, "left channel:", channelName)
+    else
+        warn("Channel does not exist:", channelName)
     end
 end
 
